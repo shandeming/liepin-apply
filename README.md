@@ -22,6 +22,13 @@
 - 首页：`https://c.liepin.com/`
 - 职位页：包含 `https://www.liepin.com/zhaopin/`
 
+职位页会按页处理：
+
+1. 当前页逐个点“聊一聊”
+2. 点击 `.ant-pagination-next`
+3. 等待新页 DOM 出现
+4. 继续下一页
+
 ## 可调整的地方
 
 - 如果目标站点不是所有页面都需要，可以在 `manifest.json` 里改 `content_scripts.matches`。
