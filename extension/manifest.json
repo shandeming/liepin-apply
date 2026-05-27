@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Auto Chat Helper",
+  "version": "1.0.0",
+  "description": "手动启动当前页面上的自动点击“聊一聊”流程。",
+  "action": {
+    "default_title": "Auto Chat Helper",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["scripting", "tabs", "activeTab"],
+  "host_permissions": ["<all_urls>"]
+}
