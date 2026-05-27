@@ -11,109 +11,49 @@ async function getActiveTab() {
   return tabs[0]
 }
 
-function autoChatRunner() {
-  if (document.documentElement.dataset.autoChatRunning === "1") {
-    console.log("[AutoChat] already running")
+function getPageModeFromUrl(url) {
+  if (url?.startsWith("https://c.liepin.com/")) {
+    return "homepage"
+  }
+
+  if (url?.includes("https://www.liepin.com/zhaopin/")) {
+    return "jobpage"
+  }
+
+  return "unsupported"
+}
+
+async function sendCommand(type) {
+  const tab = await getActiveTab()
+
+  if (!tab?.id) {
+    setStatus("No active tab found")
     return
   }
 
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
-
-  const shouldStop = () =>
-    document.documentElement.dataset.autoChatStop === "1"
-
-  const markRunning = value => {
-    document.documentElement.dataset.autoChatRunning = value ? "1" : "0"
+  const mode = getPageModeFromUrl(tab.url)
+  if (mode === "unsupported") {
+    setStatus("Unsupported URL")
+    return
   }
 
-  ;(async () => {
-    try {
-      markRunning(true)
-      document.documentElement.dataset.autoChatStop = "0"
-      const clicked = new Set()
-
-      while (!shouldStop()) {
-        const avatars = document.querySelectorAll(".recruiter-photo--YmVhZ")
-
-        for (const avatar of avatars) {
-          if (shouldStop()) {
-            break
-          }
-
-          if (clicked.has(avatar)) {
-            continue
-          }
-
-          clicked.add(avatar)
-
-          avatar.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-          })
-
-          await sleep(1000)
-
-          if (shouldStop()) {
-            break
-          }
-
-          avatar.dispatchEvent(
-            new MouseEvent("mouseover", {
-              bubbles: true,
-              cancelable: true,
-              view: window
-            })
-          )
-
-          await sleep(1500)
-
-          if (shouldStop()) {
-            break
-          }
-
-          const buttons = [...document.querySelectorAll("button")]
-          const target = buttons.find(btn => btn.innerText.includes("聊一聊"))
-
-          if (target) {
-            target.click()
-            console.log("[AutoChat] clicked")
-            await sleep(2000)
-          }
-        }
-
-        if (shouldStop()) {
-          break
-        }
-
-        window.scrollBy({
-          top: 1500,
-          behavior: "smooth"
-        })
-
-        await sleep(3000)
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(tab.id, { type }, response => {
+      const error = chrome.runtime.lastError
+      if (error) {
+        reject(new Error(error.message))
+        return
       }
-    } catch (error) {
-      console.error("[AutoChat] error", error)
-    } finally {
-      markRunning(false)
-    }
-  })()
+
+      resolve(response)
+    })
+  })
 }
 
 startBtn.addEventListener("click", async () => {
   try {
-    setStatus("Injecting...")
-    const tab = await getActiveTab()
-    if (!tab?.id) {
-      setStatus("No active tab found")
-      return
-    }
-
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: autoChatRunner
-    })
-
+    setStatus("Starting...")
+    await sendCommand("START_AUTO_CHAT")
     setStatus("Running")
   } catch (error) {
     console.error(error)
@@ -124,21 +64,7 @@ startBtn.addEventListener("click", async () => {
 stopBtn.addEventListener("click", async () => {
   try {
     setStatus("Stopping...")
-    const tab = await getActiveTab()
-    if (!tab?.id) {
-      setStatus("No active tab found")
-      return
-    }
-
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => {
-        document.documentElement.dataset.autoChatStop = "1"
-        document.documentElement.dataset.autoChatRunning = "0"
-        console.log("[AutoChat] stop requested")
-      }
-    })
-
+    await sendCommand("STOP_AUTO_CHAT")
     setStatus("Stopped")
   } catch (error) {
     console.error(error)

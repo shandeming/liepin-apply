@@ -7,6 +7,15 @@
     "default_title": "Auto Chat Helper",
     "default_popup": "popup.html"
   },
-  "permissions": ["scripting", "tabs", "activeTab"],
-  "host_permissions": ["<all_urls>"]
+  "permissions": ["tabs"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://c.liepin.com/*",
+        "https://www.liepin.com/zhaopin/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }
